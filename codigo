@@ -1,0 +1,60 @@
+#define Frio  RB4_bit     // define el led azul, avisa que hace frio
+#define Calor  RB6_bit    // define el led rojo, avisa que hace calor
+#define CTRL_1 RA4_bit    //control del 7 seg - unidades
+#define CTRL_2 RA5_bit    //control del 7 seg - decenas
+
+int temperatura;    // variable de temperatura
+
+const int Sensor_Temp = 2; //define el canal donde se leera la temperatura
+
+const int numero[]={0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x67 };  // array de numeros 7segm
+       //numeros  ={ 0  ,  1  ,  2  ,  3  ,  4  ,  5  ,  6  ,  7  ,  8  ,  9  }
+
+
+//--- DISPLAY 7 Segmentos ---//
+//calcula el Valor de temp para mostrar
+// y luego lo representa en el 7 segmentos
+void DISPLAY(int val){
+    int decena= val / 10;   // calcula la decena del Valor
+    int unidad= val % 10;   // calcula la unidad del Valor
+
+    CTRL_1=1;        // activa DISPLAY 1
+    PORTC = numero[unidad];  // segun el valor, elije en el array la posicion y muestra el numero en 7 segm
+    delay_ms(100);  //espera, si bajo el delay no se ve en el simulador
+    CTRL_1=0;      // desactiva DISPLAY 1
+
+    CTRL_2=1;
+    PORTC= numero[decena];
+    delay_ms(100);  //si bajo el delay no se ve en el simulador
+    CTRL_2=0;
+}
+
+//--- PROGRAMA PRINCIPAL ---//
+void main() {
+  //--PUERTO A
+   TRISA = 0b00000100;    // el bit 1 define entrada
+  ANSELA = 0b00000100;    // el bit 1 define analogico
+   PORTA = 0b00000000;
+
+  //--PUERTO B
+   TRISB = 0b00000000;
+  ANSELB = 0b00000000;
+   PORTB = 0b00000000;
+
+  //--PUERTO C
+   TRISC = 0b00000000;
+  ANSELC = 0b00000000;
+   PORTC = 0b00000000;
+
+   //--- BUCLE DE EJECUCION
+  while(1){
+     temperatura = ADC_read(Sensor_Temp);  // se lee un valor en volts devuelve digital (5v = 1024)
+     temperatura *= (4.88 /10);  // el valor leido se multiplica por (5v/1024) y se divide por la escala del sensor de temp
+
+                        if(temperatura<=13){ Frio= 1;  Calor=0; }
+     if((temperatura>13)&&(temperatura<25)){ Frio= 0;  Calor=0; }
+                        if(temperatura>=25){ Frio= 0;  Calor=1; }
+
+      DISPLAY(temperatura);   // realiza la funcion display
+  }
+}
